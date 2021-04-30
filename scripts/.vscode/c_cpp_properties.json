@@ -1,0 +1,19 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/opt/ros/noetic/include/**",
+        "/home/franciscopower/catkin_ws/src/smarlogy_agv_internship/agv_bringup/include/**",
+        "/home/franciscopower/catkin_ws/src/smarlogy_agv_internship/agv_core/include/**",
+        "/home/franciscopower/catkin_ws/src/smarlogy_agv_internship/agv_description/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}
