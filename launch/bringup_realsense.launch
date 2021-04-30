@@ -1,0 +1,9 @@
+<launch>
+
+    <group ns="t265">
+        <node name="t265_data_node" pkg="realsense_hacking" type="realsense_pub.py" />
+    </group>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find realsense_hacking)/config/rviz_config.rviz" required="false" />
+
+</launch>

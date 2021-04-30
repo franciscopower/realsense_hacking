@@ -10,34 +10,8 @@ from nav_msgs.msg import Path
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 import tf
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
 import pyrealsense2 as rs
-
-from math import pi
-
-
-def rotate_cam_pose(pose):
-    """Transforms the coordinate system of the camera into a coordinate system with Z up
-
-    Args:
-        pose (pyrealsense2.pose): original camera pose
-
-    Returns:
-        [pyrealsense2.pose]: transformed camera pose
-    """
-    #switch translation from (X,Y,Z) to (Z,X,Y)
-    pose.translation.x, pose.translation.y, pose.translation.z = pose.translation.z, pose.translation.x, pose.translation.y
-    #switch rotation from (X,Y,Z) to (Z,X,Y)
-    euler_rot = euler_from_quaternion(
-        (pose.rotation.x, pose.rotation.y, pose.rotation.z, pose.rotation.w))
-    q_rot = quaternion_from_euler(euler_rot[2], euler_rot[0], euler_rot[1])
-    pose.rotation.x = q_rot[0]
-    pose.rotation.y = q_rot[1]
-    pose.rotation.z = q_rot[2]
-    pose.rotation.w = q_rot[3]
-
-    return pose
 
 
 def main():
@@ -54,14 +28,14 @@ def main():
     rospy.init_node("t265_data_node")
     #initialize publishers
     odom_broadcaster = tf.TransformBroadcaster()
-    odom_pub = rospy.Publisher("/t265/odom", Odometry, queue_size=10)
-    path_pub = rospy.Publisher("/t265/path", Path, queue_size=10)
+    odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
+    path_pub = rospy.Publisher("path", Path, queue_size=10)
     # --------------- END_ROS -------------------------
 
     path = Path()
     #main loop
-    while True:
-        try:
+    try:
+        while True:
             #Get frames from realsense
             frames = pipe.wait_for_frames()
             cam_pose = frames.get_pose_frame()
@@ -69,7 +43,8 @@ def main():
             if cam_pose:
                 pose_data = cam_pose.get_pose_data()
                 #rotate camera coordinates to point z up
-                pose_data = rotate_cam_pose(pose_data)
+                pose_data.translation.x, pose_data.translation.y, pose_data.translation.z = -pose_data.translation.z, -pose_data.translation.x, pose_data.translation.y
+                pose_data.rotation.x, pose_data.rotation.y, pose_data.rotation.z, pose_data.rotation.w = -pose_data.rotation.z, -pose_data.rotation.x, pose_data.rotation.y, pose_data.rotation.w
 
                 # --------------- ROS -------------------------
                 current_time = rospy.Time.now()
@@ -107,10 +82,9 @@ def main():
                 odom_pub.publish(odom)
                 # --------------- END_ROS -------------------------
 
-        except KeyboardInterrupt:
-            print("Shutting down node")
-            pipe.stop()
-            break
+    finally:
+        print("Shutting down node")
+        pipe.stop()
 
 
 if __name__ == "__main__":
