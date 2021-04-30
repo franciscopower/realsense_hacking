@@ -10,8 +10,11 @@ from nav_msgs.msg import Path
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 import tf
+from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
 import pyrealsense2 as rs
+
+from math import pi
 
 
 def main():
@@ -37,15 +40,16 @@ def main():
             if cam_pose:
                 pose_data = cam_pose.get_pose_data()
 
-                pose_translation = (pose_data.translation.x,
-                                    pose_data.translation.y,
-                                    pose_data.translation.z)
+                pose_translation = (pose_data.translation.z,
+                                    pose_data.translation.x,
+                                    pose_data.translation.y)
 
                 pose_rotation = (pose_data.rotation.x,
                                  pose_data.rotation.y,
                                  pose_data.rotation.z,
-                                 pose_data.rotation.w),
-
+                                 pose_data.rotation.w)
+                pose_e = euler_from_quaternion(pose_rotation)
+                pose_rotation = quaternion_from_euler(pose_e[2], pose_e[0], pose_e[1])
 
                 odom_broadcaster.sendTransform(
                     pose_translation,
@@ -59,8 +63,13 @@ def main():
                 odom.header.stamp = current_time
                 odom.header.frame_id = "odom"
                 odom.child_frame_id = "base_link"
-                odom.pose.pose.position = pose_translation
-                odom.pose.pose.orientation = pose_rotation
+                odom.pose.pose.position.x = pose_translation[0]
+                odom.pose.pose.position.y = pose_translation[1]
+                odom.pose.pose.position.z = pose_translation[2]
+                odom.pose.pose.orientation.x = pose_rotation[0]
+                odom.pose.pose.orientation.y = pose_rotation[1]
+                odom.pose.pose.orientation.z = pose_rotation[2]
+                odom.pose.pose.orientation.w = pose_rotation[3]
                 odom.twist.twist.linear = pose_data.velocity
                 odom.twist.twist.angular = pose_data.angular_velocity
 
