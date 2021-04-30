@@ -84,7 +84,8 @@ def main():
 
     finally:
         print("Shutting down node")
-        pipe.stop()
+        # pipe.stop()
+        rospy.on_shutdown(pipe.stop())
 
 
 if __name__ == "__main__":
