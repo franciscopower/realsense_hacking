@@ -82,10 +82,11 @@ def main():
                 odom_pub.publish(odom)
                 # --------------- END_ROS -------------------------
 
+                
+
     finally:
         print("Shutting down node")
-        # pipe.stop()
-        rospy.on_shutdown(pipe.stop())
+        pipe.stop()
 
 
 if __name__ == "__main__":
