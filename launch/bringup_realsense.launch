@@ -1,5 +1,8 @@
 <launch>
+    <arg name="save_file_name_arg" default="$(find realsense_hacking)/CameraTrajectory.txt" />
 
+    <param name="save_file_name_param" value="$(arg save_file_name_arg)"></param>
+    
     <group ns="t265">
         <node name="t265_data_node" pkg="realsense_hacking" type="realsense_pub.py" output="screen" />
     </group>

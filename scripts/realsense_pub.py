@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from time import time
 import signal
+import threading
+from time import sleep
 
 import rospy
 from nav_msgs.msg import Path
@@ -13,13 +14,31 @@ import pyrealsense2 as rs
 
 
 RUN = True
+odom_str = ""
+filename = ""
 
 def signalHandler(singalNumber, frame):
     global RUN
     print(" handling signal ")
     RUN = False
 
+def saveFile():
+    # filename = "/home/franciscopower/catkin_ws/src/realsense_hacking/CameraTrajectory.txt" 
+    while not filename:
+        sleep(0.1)
+        
+    f = open(filename, "a")
+
+    while RUN:
+        # print(odom_str + "\n")
+        f.write(odom_str + "\n")
+        sleep(1)
+
+    f.close()
+        
+
 def main():
+    global odom_str, filename
     #create realsense pipeline
     pipe = rs.pipeline()
     #configure realsense pipeline
@@ -35,10 +54,13 @@ def main():
     odom_broadcaster = tf.TransformBroadcaster()
     odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
     path_pub = rospy.Publisher("path", Path, queue_size=10)
+
+    filename = rospy.get_param('/save_file_name_param') 
     # --------------- END_ROS -------------------------
 
     path = Path()
     #main loop
+    odom_str = ""
     try:
         while RUN:
             #Get frames from realsense
@@ -85,6 +107,15 @@ def main():
                 #publish ROS path and odom
                 path_pub.publish(path)
                 odom_pub.publish(odom)
+
+                odom_str = str(odom.header.stamp) \
+                    + " " + str(odom.pose.pose.position.x) \
+                    + " " + str(odom.pose.pose.position.y) \
+                    + " " + str(odom.pose.pose.position.z) \
+                    + " " + str(odom.pose.pose.orientation.x) \
+                    + " " + str(odom.pose.pose.orientation.y) \
+                    + " " + str(odom.pose.pose.orientation.z) \
+                    + " " + str(odom.pose.pose.orientation.w)
                 # --------------- END_ROS -------------------------
         
     finally:
@@ -98,4 +129,9 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
+    save_th = threading.Thread(None, saveFile)
+    save_th.start()
+
     main()
+
+    save_th.join()

@@ -3,10 +3,10 @@
 from time import sleep
 
 def main():
-   
-   while True:
-      print(".")
-      sleep(1)
+   f = open("test.txt", "w") 
+   for i in range(10):
+      f.write(str(i))
+   f.close
       
 if __name__ == "__main__":
    main()
