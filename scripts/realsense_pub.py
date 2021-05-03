@@ -15,7 +15,7 @@ import pyrealsense2 as rs
 
 RUN = True
 odom_str = ""
-filename = ""
+save_path_filename = ""
 
 def signalHandler(singalNumber, frame):
     global RUN
@@ -24,21 +24,56 @@ def signalHandler(singalNumber, frame):
 
 def saveFile():
     # filename = "/home/franciscopower/catkin_ws/src/realsense_hacking/CameraTrajectory.txt" 
-    while not filename:
+    while not save_path_filename:
         sleep(0.1)
-        
-    f = open(filename, "a")
+    f = open(save_path_filename, "a")
 
     while RUN:
         # print(odom_str + "\n")
         f.write(odom_str + "\n")
-        sleep(1)
+        sleep(1) #! Time between consecutive path point recordings
 
     f.close()
-        
+
+
+def loadFile(load_path_filename, path):
+    if load_path_filename:
+        try:
+            f = open(load_path_filename, "r")
+        except:
+            return path
+        else:
+            #read file
+            for l in f.read().split('\n'):
+                data = l.split(" ")
+
+                if len(data) == 8:
+                    # create odom
+                    odom = Odometry()
+                    odom.header.stamp = rospy.Time.from_sec(float(data[0]))
+                    odom.header.frame_id = "odom"
+                    odom.child_frame_id = "base_link"
+                    odom.pose.pose.position.x = float(data[1])
+                    odom.pose.pose.position.y = float(data[2])
+                    odom.pose.pose.position.z = float(data[3])
+                    odom.pose.pose.orientation.x = float(data[4])
+                    odom.pose.pose.orientation.y = float(data[5])
+                    odom.pose.pose.orientation.z = float(data[6])
+                    odom.pose.pose.orientation.w = float(data[7])
+
+                    #create ROS pose and path
+                    pose = PoseStamped()
+                    pose.header = odom.header
+                    pose.pose = odom.pose.pose
+
+                    path.header = odom.header
+                    path.poses.append(pose)
+
+            return path
+
 
 def main():
-    global odom_str, filename
+    global odom_str, save_path_filename
     #create realsense pipeline
     pipe = rs.pipeline()
     #configure realsense pipeline
@@ -55,12 +90,16 @@ def main():
     odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
     path_pub = rospy.Publisher("path", Path, queue_size=10)
 
-    filename = rospy.get_param('/save_file_name_param') 
+    save_path_filename = rospy.get_param('/save_path_file_name') 
+    
+    path = Path()
+
+    # Load file with previous trajectory
+    load_path_filename = rospy.get_param('/load_path_file_name') 
+    path = loadFile(load_path_filename, path)
     # --------------- END_ROS -------------------------
 
-    path = Path()
     #main loop
-    odom_str = ""
     try:
         while RUN:
             #Get frames from realsense
@@ -108,7 +147,7 @@ def main():
                 path_pub.publish(path)
                 odom_pub.publish(odom)
 
-                odom_str = str(odom.header.stamp) \
+                odom_str = str(current_time.to_sec()) \
                     + " " + str(odom.pose.pose.position.x) \
                     + " " + str(odom.pose.pose.position.y) \
                     + " " + str(odom.pose.pose.position.z) \
