@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 from time import time
+import signal
 
-from os import kill
-from sys import path
-from typing import Sequence
 import rospy
 from nav_msgs.msg import Path
 from nav_msgs.msg import Odometry
@@ -13,6 +11,13 @@ import tf
 
 import pyrealsense2 as rs
 
+
+RUN = True
+
+def signalHandler(singalNumber, frame):
+    global RUN
+    print(" handling signal ")
+    RUN = False
 
 def main():
     #create realsense pipeline
@@ -35,7 +40,7 @@ def main():
     path = Path()
     #main loop
     try:
-        while True:
+        while RUN:
             #Get frames from realsense
             frames = pipe.wait_for_frames()
             cam_pose = frames.get_pose_frame()
@@ -81,13 +86,16 @@ def main():
                 path_pub.publish(path)
                 odom_pub.publish(odom)
                 # --------------- END_ROS -------------------------
-
-                
-
+        
     finally:
         print("Shutting down node")
         pipe.stop()
 
 
 if __name__ == "__main__":
+    print("------------ Started RealSense Publisher -------------")
+
+    signal.signal(signal.SIGINT, signalHandler)
+    signal.signal(signal.SIGTERM, signalHandler)
+
     main()

@@ -1,11 +1,12 @@
-import time
+#!/usr/bin/env python3
 
-st = "Hello worls"
-s = ""
-n = 0
+from time import sleep
 
-for _ in range(50):
-   s += ("\n" + st) * (n%5==0) 
-   n += 1
-
-print(s)
+def main():
+   
+   while True:
+      print(".")
+      sleep(1)
+      
+if __name__ == "__main__":
+   main()
