@@ -22,6 +22,7 @@ def signalHandler(singalNumber, frame):
     print(" handling signal ")
     RUN = False
 
+
 def saveFile():
     # filename = "/home/franciscopower/catkin_ws/src/realsense_hacking/CameraTrajectory.txt" 
     while not save_path_filename:
@@ -79,6 +80,10 @@ def main():
     #configure realsense pipeline
     cfg = rs.config()
     cfg.enable_stream(rs.stream.pose)
+
+    tm_sensor = cfg.resolve(pipe).get_device().first_pose_sensor()
+    print(tm_sensor)
+
     #start pipeline
     pipe.start(cfg)
 
@@ -90,12 +95,15 @@ def main():
     odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
     path_pub = rospy.Publisher("path", Path, queue_size=10)
 
+    # get ROS params
     save_path_filename = rospy.get_param('/save_path_file_name') 
+    load_path_filename = rospy.get_param('/load_path_file_name') 
+    save_map_filename = rospy.get_param('/save_map_file_name') 
+    load_map_filename = rospy.get_param('/load_map_file_name') 
     
     path = Path()
 
     # Load file with previous trajectory
-    load_path_filename = rospy.get_param('/load_path_file_name') 
     path = loadFile(load_path_filename, path)
     # --------------- END_ROS -------------------------
 
@@ -159,6 +167,14 @@ def main():
         
     finally:
         print("Shutting down node")
+
+        # save map
+        print("Saving Map...")
+        bf = open(save_map_filename, "w+b")
+        bf.write(bytearray(tm_sensor.export_localization_map()))
+        bf.close()
+        print("Map Saved")
+        
         pipe.stop()
 
 
