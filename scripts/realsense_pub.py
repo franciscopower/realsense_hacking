@@ -20,8 +20,16 @@ static_node_pose = None
 def signalHandler(singalNumber, frame):
     global RUN
     print("Shutting down RealSense Publisher...")
+    #STOP loops
     RUN = False
-    #TODO place map saving function and thread join here
+    # Join Saving Threads
+    save_th.join()
+    # save map
+    print("Saving Map...")
+    bf = open(save_map_filename, "w+b")
+    bf.write(bytearray(tm_sensor.export_localization_map()))
+    bf.close()
+    print("Map Saved")
 
 
 def saveFile():
@@ -177,15 +185,6 @@ def mainLoop():
                 # --------------- END_ROS -------------------------
         
     finally:
-        save_th.join()
-
-        # save map
-        print("Saving Map...")
-        bf = open(save_map_filename, "w+b")
-        bf.write(bytearray(tm_sensor.export_localization_map()))
-        bf.close()
-        print("Map Saved")
-        
         pipe.stop()
 
 
@@ -266,8 +265,8 @@ if __name__ == "__main__":
     origin_q.z = 0
     origin_q.w = 1
     
-    print("Attempting to adquire static node... ")
-    while (not static_node_bool) : #TODO: add "and RUN"
+    print("Attempting to acquire static node... ")
+    while (not static_node_bool) and RUN:
         static_node_bool = tm_sensor.set_static_node("static_node", origin_pos, origin_q)
     print("Static Node: " + str(static_node_bool))
 
