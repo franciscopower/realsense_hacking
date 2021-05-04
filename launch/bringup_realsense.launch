@@ -1,8 +1,8 @@
 <launch>
     <arg name="save_path_file_name_arg" default="$(find realsense_hacking)/NewCameraTrajectory.txt" />
-    <arg name="load_path_file_name_arg" default="$(find realsense_hacking)/OldCameraTrajectory.txt" />
+    <arg name="load_path_file_name_arg" default="$(find realsense_hacking)/CameraTrajectory.txt" />
     <arg name="save_map_file_name_arg" default="$(find realsense_hacking)/NewMap.bin" />
-    <arg name="load_map_file_name_arg" default="$(find realsense_hacking)/OldMap.bin" />
+    <arg name="load_map_file_name_arg" default="$(find realsense_hacking)/Map.bin" />
 
     <param name="save_path_file_name" value="$(arg save_path_file_name_arg)"></param>
     <param name="load_path_file_name" value="$(arg load_path_file_name_arg)"></param>

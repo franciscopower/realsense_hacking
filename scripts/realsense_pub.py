@@ -38,13 +38,14 @@ def saveFile():
     f.close()
 
 
-def loadFile(load_path_filename, path):
+def loadPrevPath(load_path_filename, prev_path):
+    
     if load_path_filename:
         try:
             f = open(load_path_filename, "r")
         except:
             print("No previous path loaded")
-            return path
+            return prev_path
         else:
             #read file
             for l in f.read().split('\n'):
@@ -52,37 +53,56 @@ def loadFile(load_path_filename, path):
 
                 if len(data) == 8:
                     # create odom
-                    odom = Odometry()
-                    odom.header.stamp = rospy.Time.from_sec(float(data[0]))
-                    odom.header.frame_id = "odom"
-                    odom.child_frame_id = "base_link"
-                    odom.pose.pose.position.x = float(data[1])
-                    odom.pose.pose.position.y = float(data[2])
-                    odom.pose.pose.position.z = float(data[3])
-                    odom.pose.pose.orientation.x = float(data[4])
-                    odom.pose.pose.orientation.y = float(data[5])
-                    odom.pose.pose.orientation.z = float(data[6])
-                    odom.pose.pose.orientation.w = float(data[7])
+                    prev_odom = Odometry()
+                    prev_odom.header.stamp = rospy.Time.from_sec(float(data[0]))
+                    prev_odom.header.frame_id = "prev_origin"
+                    prev_odom.child_frame_id = "camera"
+                    prev_odom.pose.pose.position.x = float(data[1])
+                    prev_odom.pose.pose.position.y = float(data[2])
+                    prev_odom.pose.pose.position.z = float(data[3])
+                    prev_odom.pose.pose.orientation.x = float(data[4])
+                    prev_odom.pose.pose.orientation.y = float(data[5])
+                    prev_odom.pose.pose.orientation.z = float(data[6])
+                    prev_odom.pose.pose.orientation.w = float(data[7])
 
                     #create ROS pose and path
-                    pose = PoseStamped()
-                    pose.header = odom.header
-                    pose.pose = odom.pose.pose
+                    prev_pose = PoseStamped()
+                    prev_pose.header = prev_odom.header
+                    prev_pose.pose = prev_odom.pose.pose
 
-                    path.header = odom.header
-                    path.poses.append(pose)
+                    prev_path.header = prev_odom.header
+                    prev_path.poses.append(prev_pose)
 
             print("Loaded previous path")
-            return path
+    
+    return prev_path
 
 
 def notificationCallback(notification):
+    global map_transform
+    
     if notification.get_category() == rs.notification_category.pose_relocalization:
         print("Relocalization Event Detected")
 
         print(tm_sensor.get_static_node("static_node")[0])
         print(tm_sensor.get_static_node("static_node")[1])
         print(tm_sensor.get_static_node("static_node")[2])
+
+        if tm_sensor.get_static_node("static_node")[0]:
+            map_transform = [
+                (
+                    -tm_sensor.get_static_node("static_node")[1].z,
+                    -tm_sensor.get_static_node("static_node")[1].x,
+                    tm_sensor.get_static_node("static_node")[1].y
+                ),
+                (
+                    -tm_sensor.get_static_node("static_node")[2].z,
+                    -tm_sensor.get_static_node("static_node")[2].x,
+                    tm_sensor.get_static_node("static_node")[2].y,
+                    tm_sensor.get_static_node("static_node")[2].w
+                )
+            ]
+            print("Applied map transformation")
     
 
 def mainLoop():
@@ -103,22 +123,31 @@ def mainLoop():
 
                 # --------------- ROS -------------------------
                 current_time = rospy.Time.now()
-                #broadcast transform odom --> baselink
+                #broadcast transform origin --> camera
                 odom_broadcaster.sendTransform(
                     (pose_data.translation.x, pose_data.translation.y,
                      pose_data.translation.z),
                     (pose_data.rotation.x, pose_data.rotation.y,
                      pose_data.rotation.z, pose_data.rotation.w),
                     current_time,
-                    "base_link",
-                    "odom"
+                    "camera",
+                    "origin"
+                )
+
+                #broadcast transform prev_origin --> origin
+                odom_broadcaster.sendTransform(
+                    map_transform[0],
+                    map_transform[1],
+                    current_time,
+                    "prev_origin",
+                    "origin",
                 )
 
                 #create ROS odometry
                 odom = Odometry()
                 odom.header.stamp = current_time
-                odom.header.frame_id = "odom"
-                odom.child_frame_id = "base_link"
+                odom.header.frame_id = "origin"
+                odom.child_frame_id = "camera"
                 odom.pose.pose.position = pose_data.translation
                 odom.pose.pose.orientation = pose_data.rotation
                 odom.twist.twist.linear = pose_data.velocity
@@ -134,6 +163,7 @@ def mainLoop():
 
                 #publish ROS path and odom
                 path_pub.publish(path)
+                prev_path_pub.publish(prev_path)
                 odom_pub.publish(odom)
 
                 odom_str = str(current_time.to_sec()) \
@@ -186,6 +216,7 @@ if __name__ == "__main__":
     odom_broadcaster = tf.TransformBroadcaster()
     odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
     path_pub = rospy.Publisher("path", Path, queue_size=10)
+    prev_path_pub = rospy.Publisher("prev_path", Path, queue_size=10)
 
     # get ROS params
     save_path_filename = rospy.get_param('/save_path_file_name') 
@@ -194,9 +225,10 @@ if __name__ == "__main__":
     load_map_filename = rospy.get_param('/load_map_file_name') 
     
     path = Path()
+    prev_path = Path()
 
     # Load file with previous trajectory
-    path = loadFile(load_path_filename, path)
+    prev_path = loadPrevPath(load_path_filename, prev_path)
     # --------------- END_ROS -------------------------
 
 
@@ -205,9 +237,11 @@ if __name__ == "__main__":
         load_map_file = open(load_map_filename, "r+b")
     except:
         print("No previous map loaded")
+        static_node_bool = False
     else:
         print("Loaded previous map")
         tm_sensor.import_localization_map(list(load_map_file.read()))
+        static_node_bool = True
     
     #set notification callback
     tm_sensor.set_notifications_callback(notificationCallback)
@@ -218,7 +252,10 @@ if __name__ == "__main__":
     #Start saveFile thread
     save_th = threading.Thread(None, saveFile)
     save_th.start()
-    
+
+    #default transform between previous map and new map
+    map_transform = [(0,0,0), (0,0,0,1)] 
+
     origin_pos = rs.vector()
     origin_pos.x = 0
     origin_pos.y = 0
@@ -227,12 +264,10 @@ if __name__ == "__main__":
     origin_q.x = 0
     origin_q.y = 0
     origin_q.z = 0
-    origin_q.w = 0
+    origin_q.w = 1
     
-    
-    print("Attempting to adquire static node")
-    static_node_bool = False
-    while not static_node_bool and RUN:
+    print("Attempting to adquire static node... ")
+    while (not static_node_bool) : #TODO: add "and RUN"
         static_node_bool = tm_sensor.set_static_node("static_node", origin_pos, origin_q)
     print("Static Node: " + str(static_node_bool))
 
