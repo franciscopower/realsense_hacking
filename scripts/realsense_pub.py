@@ -21,6 +21,7 @@ def signalHandler(singalNumber, frame):
     global RUN
     print("Shutting down RealSense Publisher...")
     RUN = False
+    #TODO place map saving function and thread join here
 
 
 def saveFile():
@@ -78,12 +79,13 @@ def loadFile(load_path_filename, path):
 def notificationCallback(notification):
     if notification.get_category() == rs.notification_category.pose_relocalization:
         print("Relocalization Event Detected")
-        # if tm_sensor.get_static_node("static_node_pose")[0]:
-        #     print(tm_sensor.get_static_node("static_node_pose")[1])
-        #     print(tm_sensor.get_static_node("static_node_pose")[2])
+
+        print(tm_sensor.get_static_node("static_node")[0])
+        print(tm_sensor.get_static_node("static_node")[1])
+        print(tm_sensor.get_static_node("static_node")[2])
     
 
-def main():
+def mainLoop():
     global odom_str, path, pipe, tm_sensor
 
     #main loop
@@ -216,5 +218,22 @@ if __name__ == "__main__":
     #Start saveFile thread
     save_th = threading.Thread(None, saveFile)
     save_th.start()
+    
+    origin_pos = rs.vector()
+    origin_pos.x = 0
+    origin_pos.y = 0
+    origin_pos.z = 0
+    origin_q = rs.quaternion()
+    origin_q.x = 0
+    origin_q.y = 0
+    origin_q.z = 0
+    origin_q.w = 0
+    
+    
+    print("Attempting to adquire static node")
+    static_node_bool = False
+    while not static_node_bool and RUN:
+        static_node_bool = tm_sensor.set_static_node("static_node", origin_pos, origin_q)
+    print("Static Node: " + str(static_node_bool))
 
-    main()
+    mainLoop()
