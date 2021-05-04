@@ -15,7 +15,7 @@ import pyrealsense2 as rs
 
 RUN = True
 odom_str = ""
-save_path_filename = ""
+static_node_pose = None
 
 def signalHandler(singalNumber, frame):
     global RUN
@@ -75,62 +75,16 @@ def loadFile(load_path_filename, path):
             return path
 
 
+def notificationCallback(notification):
+    if notification.get_category() == rs.notification_category.pose_relocalization:
+        print("Relocalization Event Detected")
+        # if tm_sensor.get_static_node("static_node_pose")[0]:
+        #     print(tm_sensor.get_static_node("static_node_pose")[1])
+        #     print(tm_sensor.get_static_node("static_node_pose")[2])
+    
+
 def main():
-    global odom_str, save_path_filename
-    #create realsense pipeline
-    pipe = rs.pipeline()
-    #configure realsense pipeline
-    cfg = rs.config()
-    cfg.enable_stream(rs.stream.pose)
-
-    # Get device ID
-    try:
-        tm_sensor = cfg.resolve(pipe).get_device().first_pose_sensor()
-    except:
-        print("RealSense T265 not connected\nShutting Down")
-        exit()
-    
-
-    # --------------- ROS -------------------------
-    #initialize ROS node
-    rospy.init_node("t265_data_node")
-    #initialize publishers
-    odom_broadcaster = tf.TransformBroadcaster()
-    odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
-    path_pub = rospy.Publisher("path", Path, queue_size=10)
-
-    # get ROS params
-    save_path_filename = rospy.get_param('/save_path_file_name') 
-    load_path_filename = rospy.get_param('/load_path_file_name') 
-    save_map_filename = rospy.get_param('/save_map_file_name') 
-    load_map_filename = rospy.get_param('/load_map_file_name') 
-    
-    path = Path()
-
-    # Load file with previous trajectory
-    path = loadFile(load_path_filename, path)
-    # --------------- END_ROS -------------------------
-
-
-    # Load previous Map
-    try:
-        load_map_file = open(load_map_filename, "r+b")
-    except:
-        print("No previous map loaded")
-    else:
-        print("Loaded previous map")
-        tm_sensor.import_localization_map(list(load_map_file.read()))
-    
-        
-    
-    #TODO set notification callback
-
-    #start pipeline
-    pipe.start(cfg)
-
-    #Start saveFile thread
-    save_th = threading.Thread(None, saveFile)
-    save_th.start()
+    global odom_str, path, pipe, tm_sensor
 
     #main loop
     try:
@@ -208,5 +162,59 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
+
+    #create realsense pipeline
+    pipe = rs.pipeline()
+    #configure realsense pipeline
+    cfg = rs.config()
+    cfg.enable_stream(rs.stream.pose)
+
+    # Get device ID
+    try:
+        tm_sensor = cfg.resolve(pipe).get_device().first_pose_sensor()
+    except:
+        print("RealSense T265 not connected\nShutting Down")
+        exit()
+    
+
+    # --------------- ROS -------------------------
+    #initialize ROS node
+    rospy.init_node("t265_data_node")
+    #initialize publishers
+    odom_broadcaster = tf.TransformBroadcaster()
+    odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
+    path_pub = rospy.Publisher("path", Path, queue_size=10)
+
+    # get ROS params
+    save_path_filename = rospy.get_param('/save_path_file_name') 
+    load_path_filename = rospy.get_param('/load_path_file_name') 
+    save_map_filename = rospy.get_param('/save_map_file_name') 
+    load_map_filename = rospy.get_param('/load_map_file_name') 
+    
+    path = Path()
+
+    # Load file with previous trajectory
+    path = loadFile(load_path_filename, path)
+    # --------------- END_ROS -------------------------
+
+
+    # Load previous Map
+    try:
+        load_map_file = open(load_map_filename, "r+b")
+    except:
+        print("No previous map loaded")
+    else:
+        print("Loaded previous map")
+        tm_sensor.import_localization_map(list(load_map_file.read()))
+    
+    #set notification callback
+    tm_sensor.set_notifications_callback(notificationCallback)
+
+    #start pipeline
+    pipe.start(cfg)
+
+    #Start saveFile thread
+    save_th = threading.Thread(None, saveFile)
+    save_th.start()
 
     main()
