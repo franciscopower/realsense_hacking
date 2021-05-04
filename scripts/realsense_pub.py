@@ -18,6 +18,8 @@ odom_str = ""
 static_node_pose = None
 
 def signalHandler(singalNumber, frame):
+    """Handle the SIGINT and SIGTERM signals 
+    """
     global RUN
     print("Shutting down RealSense Publisher...")
     #STOP loops
@@ -33,7 +35,8 @@ def signalHandler(singalNumber, frame):
 
 
 def saveFile():
-    # save_path_filename = "/home/franciscopower/catkin_ws/src/realsense_hacking/CameraTrajectory.txt" 
+    """Save camera trajectory in text file
+    """
     while not save_path_filename:
         sleep(0.1)
     f = open(save_path_filename, "a")
@@ -41,12 +44,21 @@ def saveFile():
     while RUN:
         # print(odom_str + "\n")
         f.write(odom_str + "\n")
-        sleep(1) #! Time between consecutive path point recordings
+        sleep(1) # Time between consecutive path point recordings
 
     f.close()
 
 
 def loadPrevPath(load_path_filename, prev_path):
+    """Load camera trajectory from previous run
+
+    Args:
+        load_path_filename (string): File name of file to load
+        prev_path (rospy.path): empty path of previous run 
+
+    Returns:
+        rospy.path: path of previous run
+    """
     
     if load_path_filename:
         try:
@@ -87,13 +99,21 @@ def loadPrevPath(load_path_filename, prev_path):
 
 
 def notificationCallback(notification):
+    """Handle pyrealsense notification callback - detect relocalization and get the transform between previous and new map
+
+    Args:
+        notification (pyrealsense2.notification): notification
+    """
     global map_transform
     
     if notification.get_category() == rs.notification_category.pose_relocalization:
-        print("Relocalization Event Detected")
-
+        print("Relocalization Event Detected: ")
         print(tm_sensor.get_static_node("static_node")[0])
+
+        print("Transform from current map to previous map:")
+        print("Translation vector:")
         print(tm_sensor.get_static_node("static_node")[1])
+        print("Rotation quaternion:")
         print(tm_sensor.get_static_node("static_node")[2])
 
         if tm_sensor.get_static_node("static_node")[0]:
@@ -114,6 +134,8 @@ def notificationCallback(notification):
     
 
 def mainLoop():
+    """Main loop of program
+    """
     global odom_str, path, pipe, tm_sensor
 
     #main loop
@@ -189,8 +211,9 @@ def mainLoop():
 
 
 if __name__ == "__main__":
-    print("------------ Started RealSense Publisher -------------")
+    print("\n------------ Started RealSense Publisher -------------")
 
+    # handle termination signals
     signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
