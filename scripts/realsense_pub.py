@@ -19,12 +19,12 @@ save_path_filename = ""
 
 def signalHandler(singalNumber, frame):
     global RUN
-    print(" handling signal ")
+    print("Shutting down RealSense Publisher...")
     RUN = False
 
 
 def saveFile():
-    # filename = "/home/franciscopower/catkin_ws/src/realsense_hacking/CameraTrajectory.txt" 
+    # save_path_filename = "/home/franciscopower/catkin_ws/src/realsense_hacking/CameraTrajectory.txt" 
     while not save_path_filename:
         sleep(0.1)
     f = open(save_path_filename, "a")
@@ -42,6 +42,7 @@ def loadFile(load_path_filename, path):
         try:
             f = open(load_path_filename, "r")
         except:
+            print("No previous path loaded")
             return path
         else:
             #read file
@@ -70,6 +71,7 @@ def loadFile(load_path_filename, path):
                     path.header = odom.header
                     path.poses.append(pose)
 
+            print("Loaded previous path")
             return path
 
 
@@ -81,11 +83,13 @@ def main():
     cfg = rs.config()
     cfg.enable_stream(rs.stream.pose)
 
-    tm_sensor = cfg.resolve(pipe).get_device().first_pose_sensor()
-    print(tm_sensor)
-
-    #start pipeline
-    pipe.start(cfg)
+    # Get device ID
+    try:
+        tm_sensor = cfg.resolve(pipe).get_device().first_pose_sensor()
+    except:
+        print("RealSense T265 not connected\nShutting Down")
+        exit()
+    
 
     # --------------- ROS -------------------------
     #initialize ROS node
@@ -106,6 +110,25 @@ def main():
     # Load file with previous trajectory
     path = loadFile(load_path_filename, path)
     # --------------- END_ROS -------------------------
+
+
+    # Load previous Map
+    try:
+        load_map_file = open(load_map_filename, "r+b")
+    except:
+        print("No previous map loaded")
+    else:
+        print("Loaded previous map")
+        tm_sensor.import_localization_map(load_map_file.read())
+    
+    #TODO set notification callback
+
+    #start pipeline
+    pipe.start(cfg)
+
+    #Start saveFile thread
+    save_th = threading.Thread(None, saveFile)
+    save_th.start()
 
     #main loop
     try:
@@ -166,7 +189,7 @@ def main():
                 # --------------- END_ROS -------------------------
         
     finally:
-        print("Shutting down node")
+        save_th.join()
 
         # save map
         print("Saving Map...")
@@ -184,9 +207,4 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
-    save_th = threading.Thread(None, saveFile)
-    save_th.start()
-
     main()
-
-    save_th.join()
