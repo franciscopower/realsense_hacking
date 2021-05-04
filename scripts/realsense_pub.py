@@ -119,7 +119,9 @@ def main():
         print("No previous map loaded")
     else:
         print("Loaded previous map")
-        tm_sensor.import_localization_map(load_map_file.read())
+        tm_sensor.import_localization_map(list(load_map_file.read()))
+    
+        
     
     #TODO set notification callback
 
