@@ -43,3 +43,4 @@ nodeLanguageServer/**
 nodeLanguageServer.*/**
 
 test.py
+.vscode/
