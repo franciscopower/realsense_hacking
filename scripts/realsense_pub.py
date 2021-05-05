@@ -39,7 +39,7 @@ def saveFile():
     """
     while not save_path_filename:
         sleep(0.1)
-    f = open(save_path_filename, "a")
+    f = open(save_path_filename, "w")
 
     while RUN:
         # print(odom_str + "\n")
@@ -291,6 +291,7 @@ if __name__ == "__main__":
     print("Attempting to acquire static node... ")
     while (not static_node_bool) and RUN:
         static_node_bool = tm_sensor.set_static_node("static_node", origin_pos, origin_q)
+        sleep(0.01)
     print("Static Node: " + str(static_node_bool))
 
     mainLoop()
