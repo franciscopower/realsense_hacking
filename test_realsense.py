@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ## License: Apache 2.0. See LICENSE file in root directory.
 ## Copyright(c) 2019 Intel Corporation. All Rights Reserved.
@@ -24,8 +24,6 @@ print(tm_sensor)
 # Start streaming with requested config
 pipe.start(cfg)
 
-
-
 try:
     while (True):
         # Wait for the next set of frames from the camera
@@ -46,9 +44,8 @@ try:
             roll  =  m.atan2(2.0 * (w*x + y*z), w*w - x*x - y*y + z*z) * 180.0 / m.pi;
             yaw   =  m.atan2(2.0 * (w*z + x*y), w*w + x*x - y*y - z*z) * 180.0 / m.pi;
             
-            # print("Frame #{}".format(pose.frame_number))
-            # print("RPY [deg]: Roll: {0:.7f}, Pitch: {1:.7f}, Yaw: {2:.7f}".format(roll, pitch, yaw))
-
+            print("Frame #{}".format(pose.frame_number))
+            print("RPY [deg]: Roll: {0:.7f}, Pitch: {1:.7f}, Yaw: {2:.7f}".format(roll, pitch, yaw))
 
 finally:
     pipe.stop()
