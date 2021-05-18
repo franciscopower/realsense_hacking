@@ -69,6 +69,7 @@ generate_messages(
   std_msgs  
   geometry_msgs
   nav_msgs
+  sensor_msgs
 )
 
 ################################################
@@ -160,6 +161,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/odom_to_path.py
   scripts/realsense_pub.py
+  scripts/t265_camera_pub.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
