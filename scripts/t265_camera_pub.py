@@ -3,6 +3,7 @@ import cv2 as cv
 import numpy as np
 import rospy
 from sensor_msgs.msg import Image
+from std_msgs.msg import Int64
 from cv_bridge import CvBridge, CvBridgeError
 import signal
 
@@ -74,6 +75,8 @@ def main():
             except CvBridgeError as e:
                 print(e)
             else:
+                image_left_message.header.stamp = rospy.Time.from_sec(frame_data["timestamp_ms"]/1000)
+                image_right_message.header.stamp = rospy.Time.from_sec(frame_data["timestamp_ms"]/1000)
                 image_left_pub.publish(image_left_message)
                 image_right_pub.publish(image_right_message)
         

@@ -1,18 +1,18 @@
 <launch>
-    <arg name="save_path_file_name_arg" default="$(find realsense_hacking)/output/NewCameraTrajectory.txt" />
-    <arg name="load_path_file_name_arg" default="$(find realsense_hacking)/output/CameraTrajectory.txt" />
-    <arg name="save_map_file_name_arg" default="$(find realsense_hacking)/output/NewMap.bin" />
-    <arg name="load_map_file_name_arg" default="$(find realsense_hacking)/output/Map.bin" />
+    <arg name="session_name_arg" default="session" />
 
-    <param name="save_path_file_name" value="$(arg save_path_file_name_arg)"></param>
-    <param name="load_path_file_name" value="$(arg load_path_file_name_arg)"></param>
-    <param name="save_map_file_name" value="$(arg save_map_file_name_arg)"></param>
-    <param name="load_map_file_name" value="$(arg load_map_file_name_arg)"></param>
+    <param name="save_path_file_name" value="$(find realsense_hacking)/output/$(arg session_name_arg)/NewCameraTrajectory.txt"></param>
+    <param name="load_path_file_name" value="$(find realsense_hacking)/output/$(arg session_name_arg)/CameraTrajectory.txt"></param>
+    <param name="save_map_file_name" value="$(find realsense_hacking)/output/$(arg session_name_arg)/NewMap.bin"></param>
+    <param name="load_map_file_name" value="$(find realsense_hacking)/output/$(arg session_name_arg)/Map.bin"></param>
+    <param name="save_images_path" value="$(find realsense_hacking)/output/$(arg session_name_arg)" ></param>
     
     <group ns="t265">
-        <node name="t265_data_node" pkg="realsense_hacking" type="realsense_pub.py" output="screen" />
+        <!-- <node name="t265_data_node" pkg="realsense_hacking" type="realsense_pub.py" output="screen" /> -->
+        <node name="t265_camera_node" pkg="realsense_hacking" type="t265_camera_pub.py" output="screen" />
+        <node name="camera_sub_save" pkg="realsense_hacking" type="camera_sub_save.py" output="screen" />
     </group>
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find realsense_hacking)/config/rviz_config.rviz" required="false" />
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find realsense_hacking)/config/rviz_config.rviz" required="false" /> -->
 
 </launch>

@@ -44,3 +44,4 @@ nodeLanguageServer.*/**
 
 test.py
 .vscode/
+output/

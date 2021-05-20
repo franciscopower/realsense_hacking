@@ -167,6 +167,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/realsense_pub.py
   scripts/t265_camera_pub.py
+  scripts/camera_sub_save.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
