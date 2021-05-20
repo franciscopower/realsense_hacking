@@ -7,7 +7,13 @@ project(realsense_hacking)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED
+  rospy
+  # std_msgs
+  geometry_msgs
+  sensor_msgs
+  nav_msgs
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -66,7 +72,7 @@ find_package(catkin REQUIRED)
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  std_msgs  
+  # std_msgs  
   geometry_msgs
   nav_msgs
   sensor_msgs
@@ -159,7 +165,6 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/odom_to_path.py
   scripts/realsense_pub.py
   scripts/t265_camera_pub.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -4,6 +4,7 @@ import numpy as np
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+import signal
 
 from threading import Lock
 frame_mutex = Lock()
@@ -11,6 +12,16 @@ frame_data = {"left"  : None,
               "right" : None,
               "timestamp_ms" : None
               }
+
+RUN = True
+
+def signalHandler(singalNumber, frame):
+    """Handle the SIGINT and SIGTERM signals 
+    """
+    global RUN
+    print("Shutting down RealSense Camera Publisher...")
+    #STOP loops
+    RUN = False
 
 def callback(frame):
     global frame_data
@@ -30,7 +41,8 @@ def callback(frame):
 
 def main():
     rospy.init_node("t265_image_node")
-    image_pub = rospy.Publisher("camera/left", Image)
+    image_left_pub = rospy.Publisher("camera/left", Image, queue_size=10)
+    image_right_pub = rospy.Publisher("camera/right", Image, queue_size=10)
     bridge = CvBridge()
         
     # Declare RealSense pipeline, encapsulating the actual device and sensors
@@ -42,7 +54,7 @@ def main():
     # Start streaming with our callback
     pipe.start(cfg, callback)
 
-    while True:
+    while RUN:
         # Check if the camera has acquired any frames
         frame_mutex.acquire()
         valid = frame_data["timestamp_ms"] is not None
@@ -57,14 +69,22 @@ def main():
             frame_mutex.release()
 
             try:
-                image_message = bridge.cv2_to_imgmsg(frame_copy["left"], "passthrough")
+                image_left_message = bridge.cv2_to_imgmsg(frame_copy["left"], "passthrough")
+                image_right_message = bridge.cv2_to_imgmsg(frame_copy["right"], "passthrough")
             except CvBridgeError as e:
                 print(e)
             else:
-                image_pub.publish(image_message)
+                image_left_pub.publish(image_left_message)
+                image_right_pub.publish(image_right_message)
         
             # cv.imshow("Left image", frame_copy["left"])
             # cv.waitKey(1)
 
+    pipe.stop()
+
 if __name__ == "__main__":
+    # handle termination signals
+    signal.signal(signal.SIGINT, signalHandler)
+    signal.signal(signal.SIGTERM, signalHandler)
+    
     main()        
