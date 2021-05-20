@@ -13,6 +13,7 @@ find_package(catkin REQUIRED
   geometry_msgs
   sensor_msgs
   nav_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -49,11 +50,11 @@ find_package(catkin REQUIRED
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+add_message_files(
+  FILES
 #   Message1.msg
-#   Message2.msg
-# )
+  StereoImage.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -112,6 +113,7 @@ catkin_package(
 #  LIBRARIES realsense_hacking
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
+  CATKIN_DEPENDS message_runtime
 )
 
 ###########

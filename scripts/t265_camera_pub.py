@@ -1,11 +1,10 @@
 import pyrealsense2 as rs
-import cv2 as cv
 import numpy as np
 import rospy
-from sensor_msgs.msg import Image
-from std_msgs.msg import Int64
+# from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import signal
+from realsense_hacking.msg import StereoImage
 
 from threading import Lock
 frame_mutex = Lock()
@@ -42,8 +41,9 @@ def callback(frame):
 
 def main():
     rospy.init_node("t265_image_node")
-    image_left_pub = rospy.Publisher("camera/left", Image, queue_size=10)
-    image_right_pub = rospy.Publisher("camera/right", Image, queue_size=10)
+    # image_left_pub = rospy.Publisher("camera/left", Image, queue_size=1)
+    # image_right_pub = rospy.Publisher("camera/right", Image, queue_size=1)
+    image_stereo_pub = rospy.Publisher("camera/stereo", StereoImage, queue_size=1)
     bridge = CvBridge()
         
     # Declare RealSense pipeline, encapsulating the actual device and sensors
@@ -77,8 +77,14 @@ def main():
             else:
                 image_left_message.header.stamp = rospy.Time.from_sec(frame_data["timestamp_ms"]/1000)
                 image_right_message.header.stamp = rospy.Time.from_sec(frame_data["timestamp_ms"]/1000)
-                image_left_pub.publish(image_left_message)
-                image_right_pub.publish(image_right_message)
+
+                stereo_image_message = StereoImage()
+                stereo_image_message.left = image_left_message
+                stereo_image_message.right = image_right_message
+
+                # image_left_pub.publish(image_left_message)
+                # image_right_pub.publish(image_right_message)
+                image_stereo_pub.publish(stereo_image_message)
         
             # cv.imshow("Left image", frame_copy["left"])
             # cv.waitKey(1)
