@@ -2,7 +2,8 @@
 
 import os
 
-session_name = "session"
+# session_name = "session"
+session_name = input("Session name: ")
 
 cam0_path = "/home/franciscopower/catkin_ws/src/realsense_hacking/output/" + session_name + "/mav0/cam0/data"
 cam1_path = "/home/franciscopower/catkin_ws/src/realsense_hacking/output/" + session_name + "/mav0/cam1/data"

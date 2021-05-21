@@ -3,12 +3,16 @@
 import signal
 import threading
 from time import sleep
+import numpy as np
 
 import rospy
 from nav_msgs.msg import Path
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
+from realsense_hacking.msg import StereoImage
+from sensor_msgs.msg import Image
 import tf
+from cv_bridge import CvBridge, CvBridgeError
 
 import pyrealsense2 as rs
 
@@ -143,8 +147,29 @@ def mainLoop():
         while RUN:
             #Get frames from realsense
             frames = pipe.wait_for_frames()
-            cam_pose = frames.get_pose_frame()
 
+            f1 = frames.get_fisheye_frame(1)
+            f2 = frames.get_fisheye_frame(2)
+            if f1 and f2:
+                frame_left = np.asanyarray(f1.get_data())
+                frame_right = np.asanyarray(f2.get_data())
+                bridge = CvBridge()
+                try:
+                    image_message_left = bridge.cv2_to_imgmsg(frame_left)
+                    image_message_right = bridge.cv2_to_imgmsg(frame_right)
+                except CvBridgeError as e:
+                    print(e)
+                else:
+                    image_message_left.header.stamp = rospy.Time.from_sec(frames.get_timestamp()*1000)
+                    image_message_right.header.stamp = rospy.Time.from_sec(frames.get_timestamp()*1000)
+
+                    stereo_image_message = StereoImage()
+                    stereo_image_message.left = image_message_left
+                    stereo_image_message.right = image_message_right
+
+                    image_stereo_pub.publish(stereo_image_message)
+            
+            cam_pose = frames.get_pose_frame()
             if cam_pose:
                 pose_data = cam_pose.get_pose_data()
                 #rotate camera coordinates to point z up
@@ -221,7 +246,7 @@ if __name__ == "__main__":
     pipe = rs.pipeline()
     #configure realsense pipeline
     cfg = rs.config()
-    cfg.enable_stream(rs.stream.pose)
+    # cfg.enable_stream(rs.stream.pose)
 
     # Get device ID
     try:
@@ -239,6 +264,7 @@ if __name__ == "__main__":
     odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
     path_pub = rospy.Publisher("path", Path, queue_size=10)
     prev_path_pub = rospy.Publisher("prev_path", Path, queue_size=10)
+    image_stereo_pub = rospy.Publisher("camera/stereo", StereoImage, queue_size=10)
 
     # get ROS params
     save_path_filename = rospy.get_param('/save_path_file_name') 

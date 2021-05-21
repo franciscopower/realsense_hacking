@@ -10,13 +10,17 @@
 # First import the library
 import pyrealsense2 as rs
 import math as m
+import numpy as np
+import cv2 as cv
+from threading import Lock
 
 # Declare RealSense pipeline, encapsulating the actual device and sensors
 pipe = rs.pipeline()
 
 # Build config object and request pose data
 cfg = rs.config()
-cfg.enable_stream(rs.stream.pose)
+# cfg.enable_stream(rs.stream.pose)
+# cfg.enable_stream(rs.stream.fisheye)
 
 tm_sensor = cfg.resolve(pipe).get_device()
 print(tm_sensor)
@@ -28,8 +32,11 @@ try:
     while (True):
         # Wait for the next set of frames from the camera
         frames = pipe.wait_for_frames()
-
-                
+        image = frames.get_fisheye_frame(1)
+        if image:
+            left_image = np.asanyarray(image.get_data())
+            cv.imshow("left", left_image)
+            cv.waitKey(1)
 
         # Fetch pose frame
         pose = frames.get_pose_frame()
@@ -46,8 +53,10 @@ try:
             roll  =  m.atan2(2.0 * (w*x + y*z), w*w - x*x - y*y + z*z) * 180.0 / m.pi;
             yaw   =  m.atan2(2.0 * (w*z + x*y), w*w + x*x - y*y - z*z) * 180.0 / m.pi;
             
-            # print("Frame #{}".format(pose.frame_number))
-            # print("RPY [deg]: Roll: {0:.7f}, Pitch: {1:.7f}, Yaw: {2:.7f}".format(roll, pitch, yaw))
+            print("Frame #{}".format(pose.frame_number))
+            print("RPY [deg]: Roll: {0:.7f}, Pitch: {1:.7f}, Yaw: {2:.7f}".format(roll, pitch, yaw))
+      
+
 
 finally:
     pipe.stop()
