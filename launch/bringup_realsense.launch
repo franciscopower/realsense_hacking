@@ -9,10 +9,10 @@
     
     <group ns="t265">
         <node name="t265_data_node" pkg="realsense_hacking" type="realsense_pub.py" output="screen" />
-        <!-- <node name="t265_camera_node" pkg="realsense_hacking" type="t265_camera_pub.py" output="screen" /> -->
-        <!-- <node name="camera_sub_save" pkg="realsense_hacking" type="camera_sub_save.py" output="screen" /> -->
+        <node name="camera_sub_save" pkg="realsense_hacking" type="camera_sub_save.py" />
     </group>
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find realsense_hacking)/config/rviz_config.rviz" required="false" />
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find realsense_hacking)/config/rviz_config_prev_session.rviz" required="false" /> -->
 
 </launch>

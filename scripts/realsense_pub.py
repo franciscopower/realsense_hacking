@@ -10,12 +10,13 @@ from nav_msgs.msg import Path
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 from realsense_hacking.msg import StereoImage
-from sensor_msgs.msg import Image
+# from sensor_msgs.msg import Image
 import tf
 from cv_bridge import CvBridge, CvBridgeError
 
 import pyrealsense2 as rs
 
+import cv2 as cv
 
 RUN = True
 odom_str = ""
@@ -153,21 +154,28 @@ def mainLoop():
             if f1 and f2:
                 frame_left = np.asanyarray(f1.get_data())
                 frame_right = np.asanyarray(f2.get_data())
+
                 bridge = CvBridge()
+            
                 try:
                     image_message_left = bridge.cv2_to_imgmsg(frame_left)
                     image_message_right = bridge.cv2_to_imgmsg(frame_right)
                 except CvBridgeError as e:
-                    print(e)
+                    # print(e)
+                    pass
                 else:
-                    image_message_left.header.stamp = rospy.Time.from_sec(frames.get_timestamp()*1000)
-                    image_message_right.header.stamp = rospy.Time.from_sec(frames.get_timestamp()*1000)
+                    t = frames.get_timestamp()/1000
+                    image_message_left.header.stamp = rospy.Time.from_sec(t)
+                    image_message_right.header.stamp = rospy.Time.from_sec(t)
 
                     stereo_image_message = StereoImage()
                     stereo_image_message.left = image_message_left
                     stereo_image_message.right = image_message_right
-
                     image_stereo_pub.publish(stereo_image_message)
+
+                    # image_left_pub.publish(image_message_left)
+                    # image_right_pub.publish(image_message_right)
+
             
             cam_pose = frames.get_pose_frame()
             if cam_pose:
@@ -264,7 +272,9 @@ if __name__ == "__main__":
     odom_pub = rospy.Publisher("odom", Odometry, queue_size=10)
     path_pub = rospy.Publisher("path", Path, queue_size=10)
     prev_path_pub = rospy.Publisher("prev_path", Path, queue_size=10)
-    image_stereo_pub = rospy.Publisher("camera/stereo", StereoImage, queue_size=10)
+    image_stereo_pub = rospy.Publisher("camera/stereo", StereoImage, queue_size=1)
+    # image_left_pub = rospy.Publisher("camera/left", Image, queue_size=1)
+    # image_right_pub = rospy.Publisher("camera/right", Image, queue_size=1)
 
     # get ROS params
     save_path_filename = rospy.get_param('/save_path_file_name') 
