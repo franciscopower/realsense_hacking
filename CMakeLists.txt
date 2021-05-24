@@ -52,8 +52,8 @@ find_package(catkin REQUIRED
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-#   Message1.msg
   StereoImage.msg
+  DepthImage.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -167,8 +167,8 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/realsense_pub.py
-  scripts/t265_camera_pub.py
+  scripts/realsense_t265_pub.py
+  scripts/realsense_d415_pub.py
   scripts/camera_sub_save.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

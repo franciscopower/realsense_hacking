@@ -1,0 +1,11 @@
+<launch>
+    <arg name="session_name_arg" default="session" />
+
+    <param name="save_images_path" value="$(find realsense_hacking)/output/$(arg session_name_arg)" ></param>
+    
+    <group ns="d415">
+        <node name="d415_data_node" pkg="realsense_hacking" type="realsense_d415_pub.py" output="screen" />
+        <node name="rgbd_sub_save" pkg="realsense_hacking" type="rgbd_sub_save.py" output="screen" />
+    </group>
+
+</launch>

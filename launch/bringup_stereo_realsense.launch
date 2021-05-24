@@ -8,8 +8,8 @@
     <param name="save_images_path" value="$(find realsense_hacking)/output/$(arg session_name_arg)" ></param>
     
     <group ns="t265">
-        <node name="t265_data_node" pkg="realsense_hacking" type="realsense_pub.py" output="screen" />
-        <node name="camera_sub_save" pkg="realsense_hacking" type="camera_sub_save.py" output="screen" />
+        <node name="t265_data_node" pkg="realsense_hacking" type="realsense_t265_pub.py" output="screen" />
+        <node name="stereo_sub_save" pkg="realsense_hacking" type="stereo_sub_save.py" output="screen" />
     </group>
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find realsense_hacking)/config/rviz_config.rviz" required="false" />
