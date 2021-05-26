@@ -1,53 +1,48 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 ## License: Apache 2.0. See LICENSE file in root directory.
 ## Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 
 #####################################################
-##           librealsense T265 rpy example         ##
+##           librealsense T265 example             ##
 #####################################################
 
 # First import the library
 import pyrealsense2 as rs
-import numpy as np
-import cv2 as cv
 
 # Declare RealSense pipeline, encapsulating the actual device and sensors
 pipe = rs.pipeline()
 
 # Build config object and request pose data
 cfg = rs.config()
-
-tm_sensor = cfg.resolve(pipe).get_device()
-print(tm_sensor)
+cfg.enable_stream(rs.stream.accel)
+cfg.enable_stream(rs.stream.gyro)
 
 # Start streaming with requested config
 pipe.start(cfg)
 
-colorizer = rs.colorizer()
-
 try:
-    while (True):
+    while True:
         # Wait for the next set of frames from the camera
         frames = pipe.wait_for_frames()
-
-        color = frames.get_color_frame()
-        depth = frames.get_depth_frame()
         
-        if color:
-            color_image = np.asanyarray(color.get_data())
-            cv.imshow("color", color_image)
+        imu = frames.as_motion_frame()
+        if imu:
+            motion_data = imu.get_motion_data()
+            print(motion_data)
+        else:
+            print("no IMU")
+        
 
-        if depth:
-            depth_color = colorizer.colorize(depth)
-            depth_color_color = np.asanyarray(depth_color.get_data())
-            cv.imshow("depth", depth_color_color)
-            cv.imshow("other depth", np.asanyarray(depth.get_data()))
-
-        k = cv.waitKey(1)
-        if k == ord('q'):
-            break
-
+        # # Fetch pose frame
+        # pose = frames.get_pose_frame()
+        # if pose:
+        #     # Print some of the pose data to the terminal
+        #     data = pose.get_pose_data()
+        #     print("Frame #{}".format(pose.frame_number))
+        #     print("Position: {}".format(data.translation))
+        #     print("Velocity: {}".format(data.velocity))
+        #     print("Acceleration: {}\n".format(data.acceleration))
 
 finally:
     pipe.stop()
